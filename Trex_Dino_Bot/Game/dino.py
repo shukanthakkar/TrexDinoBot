@@ -21,6 +21,10 @@ import sys
 import math
 import random
 import pygame
+import time
+
+# Import the Q-learning classes
+from q_learning import DinoStateSpace, QLearningAgent
 
 WIDTH = 623
 HEIGHT = 150
@@ -98,7 +102,7 @@ class Dino:
         self.y = 80
         self.texture_num = 0
         self.dy = 3
-        self.gravity = 1.2
+        self.gravity = 1.0
         self.onground = True
         self.jumping = False
         self.jump_stop = 10
@@ -343,6 +347,12 @@ def main():
     # objects
     game = Game()
     dino = game.dino
+    
+    # Q learning
+    dino_state_space = DinoStateSpace(dino, game.obstacles)
+    actions = ['jump', 'no_jump']
+
+    q_learning_agent = QLearningAgent(dino_state_space, actions)
 
     # variables
     clock = pygame.time.Clock()
@@ -368,16 +378,47 @@ def main():
             # --- cactus ---
             if game.tospawn(loops):
                 game.spawn_cactus()
+            
 
             for cactus in game.obstacles:
                 cactus.update(-game.speed)
                 cactus.show()
+                # Get the current state from the DinoStateSpace
+                current_state = dino_state_space.get_state()
+    
+                # Choose an action using Q-learning agent
+                action = q_learning_agent.get_action(current_state)
+    
+                # Update the Q-value based on the action taken and the resulting state
+                # You'll need to define a reward based on the game state
+                # For example, you can give a positive reward when Dino successfully jumps over an obstacle
+                reward = 0  # Replace with the actual reward mechanism
+    
+                
 
-                # collision
+                # # collision
+                # if game.collision.between(dino, cactus):
+                #     over = True
                 if game.collision.between(dino, cactus):
-                    over = True
+                    # Collision occurred, give a negative reward and end the game
+                    reward = -50
+                    # over = True
+                else:
+                    # No collision
+                    if dino.jumping:
+                        # Give a small positive reward for being in the air while jumping
+                        reward = 1
+                    else:
+                        # Give a slightly higher positive reward for staying on the ground
+                        reward = 10
 
-            if over:
+                    # If the Dino successfully jumps over an obstacle, give a higher reward
+                    if dino.onground and dino.x > cactus.x:
+                        reward += 30
+                
+                # Update Q-value
+                q_learning_agent.update_q_value(current_state, action, reward, dino_state_space.get_state())
+            if over or game.score.act>999:
                 game.over()
 
             # -- score ---
@@ -404,6 +445,33 @@ def main():
                     dino = game.dino
                     loops = 0
                     over = False
+
+        # events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        
+        # Automatic actions by Q-learning agent
+        if not over and game.playing:
+            # Get the current state from the DinoStateSpace
+            current_state = dino_state_space.get_state()
+        
+            # Choose an action using Q-learning agent
+            action = q_learning_agent.get_action(current_state)
+        
+            # Take action based on Q-learning decision
+            if action == 'jump' and dino.onground:
+                dino.jump()
+        
+            if action == 'no_jump' and not dino.onground:
+                dino.fall()  # Assuming a fall action when not on the ground
+                # You might need to adjust this based on your game dynamics
+        
+            # Start the game if not playing
+            if not game.playing:
+                game.start()
+
 
         clock.tick(80)
         pygame.display.update()

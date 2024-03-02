@@ -15,16 +15,17 @@ Classes:
 
 The game loop in the main function handles updates, rendering, and user input.
 """
-
 import os
+import json
 import sys
 import math
 import random
 import pygame
-import time
+import pyautogui
 
 # Import the Q-learning classes
 from q_learning import DinoStateSpace, QLearningAgent
+
 
 WIDTH = 623
 HEIGHT = 150
@@ -37,7 +38,7 @@ pygame.display.set_caption('Dino')
 
 class Background:
     """
-    Class representing the background.
+    Class representing the scrolling background.
 
     Attributes:
     - width: Width of the background.
@@ -278,6 +279,7 @@ class Game:
     - sound: Loaded sound for game over.
     - big_lbl: Rendered label for the game over screen.
     - small_lbl: Rendered label for restarting the game.
+    - restart_count: Number of restarts
     """
 
     def __init__(self, hs=0):
@@ -292,6 +294,7 @@ class Game:
         self.set_sound()
         self.set_labels()
         self.spawn_cactus()
+        self.restart_count = 0  # Track the number of restarts
 
     def set_labels(self):
         """Load fonts and labels for game over screen."""
@@ -315,6 +318,7 @@ class Game:
         screen.blit(self.big_lbl, (WIDTH // 2 - self.big_lbl.get_width() // 2, HEIGHT // 4))
         screen.blit(self.small_lbl, (WIDTH // 2 - self.small_lbl.get_width() // 2, HEIGHT // 2))
         self.playing = False
+        self.restart_count += 1  # Increment restart count
 
     def tospawn(self, loops):
         """Determine if an obstacle should spawn."""
@@ -322,160 +326,164 @@ class Game:
 
     def spawn_cactus(self):
         """Spawn a new cactus obstacle."""
-        # list with cactus
         if len(self.obstacles) > 0:
             prev_cactus = self.obstacles[-1]
             x = random.randint(prev_cactus.x + self.dino.width + 84,
                                WIDTH + prev_cactus.x + self.dino.width + 84)
-
-        # empty list
         else:
             x = random.randint(WIDTH + 100, 1000)
 
-        # create the new cactus
         cactus = Cactus(x)
         self.obstacles.append(cactus)
 
     def restart(self):
         """Restart the game."""
-        self.__init__(hs=self.score.hs)
+        self.dino = Dino()  # Reset Dino
+        self.obstacles = []  # Clear obstacles
+        self.playing = True
+        self.spawn_cactus()  # Spawn initial cactus
 
+        # Load Q-values only for the first restart
+        dino_state_space = DinoStateSpace(self.dino, self.obstacles)
+        actions = ['jump', 'no_jump']
+        q_learning_agent = QLearningAgent(dino_state_space, actions)
 
-def main():
+        # Load Q-values if available
+        if os.path.exists('q_values.json'):
+            q_learning_agent.load_q_values('q_values.json')
+            print("Q-values loaded from 'q_values.json")
+
+def main(num_restarts):
     """Main game loop."""
+    completed_games = 0
 
-    # objects
-    game = Game()
-    dino = game.dino
-    
-    # Q learning
-    dino_state_space = DinoStateSpace(dino, game.obstacles)
-    actions = ['jump', 'no_jump']
+    while completed_games < num_restarts:
+        print(f"\nGame #{completed_games + 1}")
 
-    q_learning_agent = QLearningAgent(dino_state_space, actions)
+        game = Game()  # Initialize the game for each iteration
+        dino = game.dino
 
-    # variables
-    clock = pygame.time.Clock()
-    loops = 0
-    over = False
+        # Q-learning
+        dino_state_space = DinoStateSpace(dino, game.obstacles)
+        actions = ['jump', 'no_jump']
+        q_learning_agent = QLearningAgent(dino_state_space, actions)
 
-    # main loop
-    while True:
+        # Load Q-values if available
+        if os.path.exists('q_values.json'):
+            q_learning_agent.load_q_values('q_values.json')
+            print("Q-values loaded from 'q_values.json'")
 
-        if game.playing:
+        # variables
+        clock = pygame.time.Clock()
+        loops = 0
+        over = False
+        game.start()  # Start the game automatically
 
+        while True:
             loops += 1
 
-            # --- BG ---
+            # Background
             for bg in game.bg:
                 bg.update(-game.speed)
                 bg.show()
 
-            # --- dino ---
+            # Dino
             dino.update(loops)
             dino.show()
 
-            # --- cactus ---
+            # Cactus
             if game.tospawn(loops):
                 game.spawn_cactus()
-            
 
             for cactus in game.obstacles:
                 cactus.update(-game.speed)
                 cactus.show()
+
+                # Update Dino's state after obstacles have been updated
+                dino_state_space.update_state()
+
                 # Get the current state from the DinoStateSpace
                 current_state = dino_state_space.get_state()
-    
+
                 # Choose an action using Q-learning agent
                 action = q_learning_agent.get_action(current_state)
-    
-                # Update the Q-value based on the action taken and the resulting state
-                # You'll need to define a reward based on the game state
-                # For example, you can give a positive reward when Dino successfully jumps over an obstacle
-                reward = 0  # Replace with the actual reward mechanism
-    
-                
 
-                # # collision
-                # if game.collision.between(dino, cactus):
-                #     over = True
+                # Take action based on Q-learning decision
+                if action == 'jump' and (dino.onground and not dino.falling):
+                    dino.jump()
+
+                if action == 'no_jump' and not dino.onground and dino.falling:
+                    dino.fall()
+
+                # Check for collision
                 if game.collision.between(dino, cactus):
-                    # Collision occurred, give a negative reward and end the game
-                    reward = -50
-                    # over = True
+                    reward = -10
+                    over = True
                 else:
-                    # No collision
                     if dino.jumping:
-                        # Give a small positive reward for being in the air while jumping
                         reward = 1
                     else:
-                        # Give a slightly higher positive reward for staying on the ground
-                        reward = 10
+                        reward = 2
+                        if dino.onground and dino.x > cactus.x:
+                            reward += 10
 
-                    # If the Dino successfully jumps over an obstacle, give a higher reward
-                    if dino.onground and dino.x > cactus.x:
-                        reward += 30
-                
                 # Update Q-value
-                q_learning_agent.update_q_value(current_state, action, reward, dino_state_space.get_state())
-            if over or game.score.act>999:
-                game.over()
+                next_state = dino_state_space.get_state()
+                q_learning_agent.update_q_value(current_state, action, reward, next_state)
 
-            # -- score ---
-            game.score.update(loops)
-            game.score.show()
+            # Automatically restart the game after a certain number of loops or when over
+            if over or game.score.act > 999:
+                print("Q-values after Game #{}:".format(completed_games + 1))
+                q_learning_agent.print_q_values()
 
-        # events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                # Increment completed games
+                completed_games += 1
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    if not over:
-                        if dino.onground:
-                            dino.jump()
+                # Automatically restart the game after printing Q-values
+                game.restart()
+                dino = game.dino
+                loops = 0
+                over = False
+            else:
+                # Score
+                game.score.update(loops)
+                game.score.show()
 
-                        if not game.playing:
-                            game.start()
+                # Events
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        # Save Q-values before quitting
+                        q_learning_agent.save_q_values('q_values.json')
+                        pygame.quit()
+                        sys.exit()
 
-                if event.key == pygame.K_r:
-                    game.restart()
-                    dino = game.dino
-                    loops = 0
-                    over = False
+                # Decay exploration rate for Q-learning agent
+                q_learning_agent.decay_exploration_rate()
 
-        # events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-        
-        # Automatic actions by Q-learning agent
-        if not over and game.playing:
-            # Get the current state from the DinoStateSpace
-            current_state = dino_state_space.get_state()
-        
-            # Choose an action using Q-learning agent
-            action = q_learning_agent.get_action(current_state)
-        
-            # Take action based on Q-learning decision
-            if action == 'jump' and dino.onground:
-                dino.jump()
-        
-            if action == 'no_jump' and not dino.onground:
-                dino.fall()  # Assuming a fall action when not on the ground
-                # You might need to adjust this based on your game dynamics
-        
-            # Start the game if not playing
-            if not game.playing:
-                game.start()
+                clock.tick(80)
 
+                # Update the display
+                pygame.display.flip()
 
-        clock.tick(80)
-        pygame.display.update()
+                # Check if the game is not playing and break out of the loop
+                if not game.playing:
+                    break
 
+        # Prompt user to press 'r' to restart or any other key to exit
+        if completed_games < num_restarts:
+            print("\nPress 'r' to restart or any other key to exit.")
+            restart_key_pressed = False
+            while not restart_key_pressed:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_r:
+                            restart_key_pressed = True
+                        else:
+                            pygame.quit()
+                            sys.exit()
 
-if __name__ == "__main__":
-    main()
+    print("\nCompleted specified number of restarts. Exiting.")
+    
+# Get the number of restarts from the user
+num_restarts = int(input("Enter the number of restarts to be played: "))
+main(num_restarts)

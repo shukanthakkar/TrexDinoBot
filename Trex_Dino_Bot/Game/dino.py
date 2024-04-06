@@ -103,9 +103,12 @@ class Dino:
         self.jumping = False
         self.jump_stop = 10
         self.falling = False
+        self.ducking = False
         self.fall_stop = self.y
         self.set_texture()
+        #self.set_texture_duck()
         self.set_sound()
+        self.set_sound_duck()
         self.show()
 
     def update(self, loops):
@@ -123,30 +126,58 @@ class Dino:
                 self.stop()
 
         # walking
-        elif self.onground and loops % 4 == 0:
+        elif self.onground and loops % 4 == 0 and not self.ducking:
             self.texture_num = (self.texture_num + 1) % 3
             self.set_texture()
+        
+        # ducking
+        elif self.onground and loops % 4 == 0 and self.ducking:
+            self.texture_num = (self.texture_num + 1) % 2
+            self.set_texture_duck()
+        
 
     def show(self):
         """Display Dino."""
-        screen.blit(self.texture, (self.x, self.y))
-
+        if not self.ducking:
+            screen.blit(self.texture, (self.x, self.y))
+        elif self.ducking:
+            screen.blit(self.texture, (self.x, self.y+8))
     def set_texture(self):
         """Load and scale Dino's texture."""
         path = os.path.join(f'assets/images/dino{self.texture_num}.png')
         self.texture = pygame.image.load(path)
         self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
 
+    def set_texture_duck(self):
+        """Load and scale Dino's texture."""
+        path = os.path.join(f'assets/images/dino_duck{self.texture_num}.png')
+        self.texture = pygame.image.load(path)
+        self.texture = pygame.transform.scale(self.texture, (self.width, self.height-12))
+
     def set_sound(self):
         """Load Dino's jump sound."""
         path = os.path.join('assets/sounds/jump.wav')
         self.sound = pygame.mixer.Sound(path)
+
+    def set_sound_duck(self):
+        """Load Dino's duck sound."""
+        path = os.path.join('assets/sounds/duck.wav')
+        self.soundduck = pygame.mixer.Sound(path)
 
     def jump(self):
         """Handle jumping action."""
         self.sound.play()
         self.jumping = True
         self.onground = False
+
+    def duck(self):
+        """Handle jumping action."""
+        self.soundduck.play()
+        self.ducking = True
+
+    def duckrelease(self):
+        """Handle jumping action."""
+        self.ducking = False
 
     def fall(self):
         """Handle falling action."""
@@ -159,6 +190,53 @@ class Dino:
         self.onground = True
 
 
+class Bird:
+    """
+    Class representing the bird obstacle.
+
+    Attributes:
+    - width: Width of the Bird.
+    - height: Height of the Bird.
+    - x: X-coordinate of the Bird.
+    - y: Y-coordinate of the Bird.
+    - texture: Loaded and scaled image representing the Bird.
+    """
+
+    def __init__(self, x):
+        """Initialize Birt object."""
+        self.type="Bird"
+        self.width = 40
+        self.height = 30
+        self.texture_num = 0 
+        self.flying=True
+        self.x = x
+        self.y = random.randint(20,80)
+        self.set_texture()
+        self.show()
+
+    def update(self, dx):
+        """Update Bird's position."""
+        self.x += dx
+        #self.y += random.randint(-3, 3)
+
+    def show(self):
+        """Display Bird."""
+        screen.blit(self.texture, (self.x, self.y))
+
+    def set_texture(self):
+        """Load and scale Dino's texture."""
+        path = os.path.join(f'assets/images/bird{self.texture_num}.png')
+        self.texture = pygame.image.load(path)
+        
+        self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
+        
+    def update_fly(self,loops):
+        """Update Dino's position and state."""
+        # ducking
+        if self.flying and loops % 8 == 0:
+            self.texture_num = (self.texture_num + 1) % 2
+            self.set_texture()
+        
 class Cactus:
     """
     Class representing the Cactus obstacle.
@@ -173,6 +251,7 @@ class Cactus:
 
     def __init__(self, x):
         """Initialize Cactus object."""
+        self.type="Cactus"
         self.width = 34
         self.height = 44
         self.x = x
@@ -206,7 +285,21 @@ class Collision:
     def between(self, obj1, obj2):
         """Check if two objects collide."""
         distance = math.sqrt((obj1.x - obj2.x) ** 2 + (obj1.y - obj2.y) ** 2)
-        return distance < 35
+        if not obj1.ducking and obj2.type=="Cactus":
+            return distance < 38
+        elif obj1.ducking and obj2.type=="Cactus":
+            return distance<45
+        elif not obj1.ducking and obj2.type=="Bird"  and obj2.texture_num==0:
+            return distance < 35
+        elif obj1.ducking and obj2.type=="Bird" and obj2.texture_num==0:
+            return distance<35
+        elif not obj1.ducking and obj2.type=="Bird"  and obj2.texture_num==1:
+            return distance < 30
+        elif obj1.ducking and obj2.type=="Bird" and obj2.texture_num==1:
+            return distance<32
+        else:
+            return distance<35
+        
 
 
 class Score:
@@ -331,6 +424,23 @@ class Game:
         # create the new cactus
         cactus = Cactus(x)
         self.obstacles.append(cactus)
+    
+    def spawn_Bird(self):
+        """Spawn a new bird obstacle."""
+        # list with bird
+        if len(self.obstacles) > 0:
+            prev_obstacle = self.obstacles[-1]
+            x = random.randint(prev_obstacle.x + self.dino.width + 84,
+                               WIDTH + prev_obstacle.x + self.dino.width + 84)
+
+        # empty list
+        else:
+            x = random.randint(WIDTH + 100, 1000)
+
+        # create the new cactus
+        bird = Bird(x)
+        self.obstacles.append(bird)
+    
 
     def restart(self):
         """Restart the game."""
@@ -367,10 +477,13 @@ def main():
 
             # --- cactus ---
             if game.tospawn(loops):
-                game.spawn_cactus()
+                # game.spawn_cactus()
+                game.spawn_Bird()
 
             for cactus in game.obstacles:
                 cactus.update(-game.speed)
+                if cactus.type=="Bird":
+                    cactus.update_fly(loops)
                 cactus.show()
 
                 # collision
@@ -391,11 +504,18 @@ def main():
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+                if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
                     if not over:
                         if dino.onground:
                             dino.jump()
+                        if not game.playing:
+                            game.start()
 
+                elif event.key == pygame.K_DOWN:
+                    if not over:
+                        if dino.onground:
+                            dino.duck()
+                
                         if not game.playing:
                             game.start()
 
@@ -405,6 +525,12 @@ def main():
                     loops = 0
                     over = False
 
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_DOWN:
+                    if not over:
+                        if dino.onground:
+                            dino.duckrelease()
+                
         clock.tick(80)
         pygame.display.update()
 

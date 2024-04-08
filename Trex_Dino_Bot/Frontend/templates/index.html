@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Game</title>
+    <style>
+        body {
+            background-image: url("/static/assets/images/index_bg.jpg");
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        /* Popup box */
+        .popup-bg {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #f0f0f0;
+            border: 2px solid #ccc;
+            padding: 20px;
+            z-index: 1001;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: popup-fade-in 0.3s ease forwards;
+        }
+        .popup-content {
+            color: #333;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        /* Animation */
+        @keyframes popup-fade-in {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Dino Game</h1>
+        <a href="/play" class="button">Play Game</a>
+        <button class="button" id="aboutBtn">About</button>
+    </div>
+    <!-- Popup box for About section -->
+    <div id="popupBg" class="popup-bg"></div>
+    <div id="popupAbout" class="popup">
+        <span class="close" onclick="closePopupAbout()">&times;</span>
+        <div class="popup-content">
+            <h2>About Dino Game</h2>
+            <p>This is a simple implementation of the classic Dino game using the Pygame library. The game includes a Dino character that can jump over obstacles (cacti) while earning points. The game ends when the Dino collides with an obstacle.</p>
+            <p>Classes:</p>
+            <ul>
+                <li>Background: Represents the scrolling background.</li>
+                <li>Dino: Represents the main character of the game.</li>
+                <li>Cactus: Represents the obstacles the Dino must avoid.</li>
+                <li>Collision: Handles collision detection between objects.</li>
+                <li>Score: Manages the scoring system.</li>
+                <li>Game: Manages the overall game state.</li>
+            </ul>
+            <p>The game loop in the main function handles updates, rendering, and user input.</p>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
+    <script>
+        // Function to display the About popup
+        function showPopupAbout() {
+            document.getElementById('popupBg').style.display = 'block';
+            document.getElementById('popupAbout').style.display = 'block';
+        }
+
+        // Function to close the About popup
+        function closePopupAbout() {
+            document.getElementById('popupBg').style.display = 'none';
+            document.getElementById('popupAbout').style.display = 'none';
+        }
+
+        // Add click event listener to About button
+        document.getElementById('aboutBtn').addEventListener('click', showPopupAbout);
+    </script>
+</body>
+</html>

@@ -35,11 +35,14 @@ HEIGHT = 200
 # pygame.display.set_caption('Dino')
 
 
-def load_assets(csvpath='assets\\images\\resources.csv'):
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+def load_assets(dir_path='assets\\images\\'):
     """Load game assets."""
     assets={}
     # Read the CSV file using pandas
-    df = pd.read_csv('assets\\images\\resources.csv')
+    csv_path = os.path.join(current_dir, dir_path, 'resources.csv')
+    df = pd.read_csv(csv_path)
     
     # Iterate over each row in the DataFrame
     for index, row in df.iterrows():
@@ -48,7 +51,8 @@ def load_assets(csvpath='assets\\images\\resources.csv'):
         x1, y1, x2, y2 = int(row['X1']), int(row['Y1']), int(row['X2']), int(row['Y2'])
         
         # Open the image file
-        image = Image.open('assets\\images\\resources.png')
+        png_path=os.path.join(current_dir, dir_path, 'resources.png')
+        image = Image.open(png_path)
         
         # Crop the image based on the provided coordinates
         cropped_image = image.crop((x1, y1, x2, y2))
@@ -107,11 +111,12 @@ class Background:
         # bg1 = (600,150)
         # screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), (self.x,self.y))
         # screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), bg1)
-        self.x=0;self.y=150
+        # self.x=0;self.y=150
+        # print(self.x)
         fn(self)
-        self.x=600
-        self.y=150
-        fn(self)
+        # self.x=600;self.y=150
+        # print(self.x)
+        # fn(self)
 
     def set_texture(self):
         """Load and scale the background texture."""
@@ -234,12 +239,15 @@ class Dino:
 
     def set_sound(self):
         """Load Dino's jump sound."""
-        path = os.path.join('assets/sounds/jump.wav')
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(current_dir, 'assets/sounds/', 'jump.wav')
+        # path = os.path.join('assets/sounds/jump.wav')
         self.sound = pygame.mixer.Sound(path)
 
     def set_sound_duck(self):
         """Load Dino's duck sound."""
-        path = os.path.join('assets/sounds/duck.wav')
+        path = os.path.join(current_dir, 'assets/sounds/', 'duck.wav')
+        # path = os.path.join('assets/sounds/duck.wav')
         self.soundduck = pygame.mixer.Sound(path)
 
     def jump(self):
@@ -470,7 +478,8 @@ class Score:
         
     def set_sound(self):
         """Load the score sound."""
-        path = os.path.join('assets/sounds/point.wav')
+        path = os.path.join(current_dir, 'assets/sounds/', 'point.wav')
+        # path = os.path.join('assets/sounds/point.wav')
         self.sound = pygame.mixer.Sound(path)
 
     def check_hs(self):
@@ -529,7 +538,8 @@ class Game:
 
     def set_sound(self):
         """Load game over sound."""
-        path = os.path.join('assets/sounds/die.wav')
+        path = os.path.join(current_dir, 'assets/sounds/', 'die.wav')
+        # path = os.path.join(current_dir,'assets/sounds/','die.wav')
         self.sound = pygame.mixer.Sound(path)
 
     def start(self):
@@ -601,7 +611,7 @@ class Game:
         difficulty=random.randint(150,300)
         ids= random.choice(['Difficult','Medium','Easy'])
         
-        print(f'Game Difficulty set to : {ids}')
+        # print(f'Game Difficulty set to : {ids}')
         
         if ids=="Difficult":
             difficulty=random.randint(150, 201)
@@ -617,14 +627,14 @@ class Game:
         if len(self.obstacles) > 0:
             # prev_obstacle = self.obstacles[-1]
             # x = random.randint(prev_obstacle.x + self.dino.width + difficulty,WIDTH + prev_obstacle.x + self.dino.width + difficulty)
-            offest=50
-            x=self.obstacles[-1].x+WIDTH//3+random.randint(min_spawn_distance, max_spawn_distance)
+            offest=0
+            x=self.obstacles[-1].x+max_spawn_distance+random.randint(min_spawn_distance, max_spawn_distance)
             x+=offest
             if x<0 or WIDTH-(self.obstacles[-1].x//WIDTH)<max_spawn_distance or (x-self.obstacles[-1].x)<min_spawn_distance:
                 print('here')
                 x=max_spawn_distance*2
             
-            print(x)
+            # print(x)
             
             # print(f"{ids}:{prev_obstacle.x}:{x}:-{x-prev_obstacle.x}--{self.dino.x}")
             # print(":".join([str(i.x) for i in self.obstacles]))
@@ -684,6 +694,7 @@ class DinoGame:
                 # --- BG ---
                 for bg in self.game.bg:
                     bg.update(-self.game.speed)
+                    # print(bg.x)
                     bg.show(self.screenblitz)
                 
                 # --- dino ---

@@ -123,8 +123,16 @@ function hideSliderValue(slider) {
         valueDisplay.style.display = 'none'; // Hide the value
     }
 }
+// Get the dropdown element
+const AIModeDropdown = document.getElementById('AIModeDropdown');
 
-
+// Add event listener for changes in the dropdown selection
+AIModeDropdown.addEventListener('change', function() {
+    const selectedMode = AIModeDropdown.value; // Get the selected AI mode
+    // Call a function or perform actions based on the selected AI mode
+    console.log("Selected AI mode:", selectedMode);
+    // Example: if (selectedMode === 'CNN') { ... }
+});
 
 
 
@@ -132,4 +140,3 @@ function hideSliderValue(slider) {
 // Add event listeners to buttons
 //document.getElementById('startButton').addEventListener('click', startGame);
 //document.getElementById('stopButton').addEventListener('click', stopGame);
-//document.getElementById('aiButton').addEventListener('click', enableAI);

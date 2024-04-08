@@ -14,11 +14,12 @@
             height: 100vh;
             margin: 0;
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 20px; 
         }
+        
         .game-window {
-            width: 623px; /* Width of the game window */
-            height: 150px; /* Height of the game window */
+            width: 800px; /* Width of the game window */
+            height: 250px; /* Height of the game window */
             background-color: white; /* Background color of the game window */
             border: 2px solid black; /* Border of the game window */
             margin-bottom: 20px; /* Margin bottom to create space between game window and buttons */
@@ -27,9 +28,9 @@
             display: flex;
             align-items: flex-start; /* Align items to the top */
             width: 50%;
-            margin: 30px;
+            margin: 20px;
             justify-content: flex-end; /* Align to the right */
-            margin-top: -150px; 
+            margin-top: -120px; 
             position: relative; /* Add position relative to container */
         }
         .icon-container {
@@ -108,7 +109,11 @@
 
         .button-container {
             text-align: center;
-            margin-right: 20px; /* Add some margin between button container and slider container */
+            margin-right: 15px; /* Add some margin between button container and slider container */
+             width: 100%;
+             margin-bottom: 90px;
+            
+             position: relative;
         }
         .button {
             background-color: #4CAF50;
@@ -143,15 +148,16 @@
         
         width: 80px; 
         height: auto;
-        margin: 30px; 
+        margin-right: -225px;
+        margin-bottom: -10px; 
         }
         .chatbot_text {
             position: absolute; /* Position cloud text box relative to container */
-            top: 400px; /* Adjust vertical position */
-            left: 70%; /* Position horizontally at the center */
+            top: 350px; /* Adjust vertical position */
+            left: 50%; /* Position horizontally at the center */
             transform: translateX(-50%); /* Center horizontally */
-            width: 200px; /* Set width of cloud text box */
-            height: 100px; /* Set height of cloud text box */
+            width: 150px; /* Set width of cloud text box */
+            height: 80px; /* Set height of cloud text box */
             background-color: white; /* Background color of cloud text box */
             border-radius: 10px; /* Border radius to create rounded corners */
             border: 2px solid black; /* Border of cloud text box */
@@ -164,14 +170,19 @@
     </style>
 </head>
 <body>
-    <div class="button-container">
+        <div class="button-container">
         <div class="game-window" id="gamewindow">
-            <canvas id="gameCanvas" width="623" height="150"></canvas>
+            <canvas id="gameCanvas" width="800" height="350"></canvas>
         </div>
         <button id="startButton" class="button">Start</button>
         <button id="stopButton" class="button">Stop</button>
-        <button id="aiButton" class="ai-button">AI Mode</button>
-    </div>
+        <select id="AIModeDropdown" class="ai-mode-dropdown">
+            <option value="CNN">CNN</option>
+            <option value="VoiceOver">Voice Over</option>
+            <option value="Algorithm">Algorithm</option>
+        </select>
+        </div>
+
     <div class="container">
         <div class="icon-container">
             <img src="/static/assets/images/icons.jpg" alt="Icon 1" class="icon">

@@ -1,6 +1,6 @@
 // Get the game canvas element
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById('gameCanvas');
+   // const ctx = canvas.getContext('2d');
 
 // Variables to track Dino position and movement
 let dinoX = 10;
@@ -77,71 +77,59 @@ function enableAI() {
     // Your code to enable AI mode
     // Implement AI logic here
 }
-document.addEventListener('DOMContentLoaded', function() {
-    // Get reference to the sliders-container
-    var slidersContainer = document.querySelector('.slider-container');
-    
-    // Define the number of sliders you want
-    var numSliders = 5;
-    
-    // Loop to create and append sliders
-    for (var i = 1; i <= numSliders; i++) {
-        var slider = document.createElement('input');
-        slider.setAttribute('type', 'range');
-        slider.setAttribute('id', 'slider' + i);
-        slider.setAttribute('min', '1');
-        slider.setAttribute('max', '100');
-        slider.setAttribute('value', '50'); // Default value
-        slidersContainer.appendChild(slider);
-    }
+
+
+
+    //making the slider dynamic
+// Get all slider elements
+    // Get all slider elements
+const sliders = document.querySelectorAll('.slider-container input[type="range"]');
+
+// Add event listener to each slider
+sliders.forEach(slider => {
+    slider.addEventListener('input', () => { // Use input event for real-time updating
+        updateSliderValue(slider);
+    });
+
+    slider.addEventListener('mousemove', () => { // Add mousemove event for hover effect
+        showSliderValue(slider);
+    });
 });
 
-// Get the game canvas element
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
 
-// Other game-related JavaScript code goes here...
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Get reference to the sliders-container
-    var slidersContainer = document.querySelector('.slider-container');
-
-    // Define the number of sliders you want
-    var numSliders = 5;
-
-    // Loop to create and append sliders
-    for (var i = 1; i <= numSliders; i++) {
-        var slider = document.createElement('input');
-        slider.setAttribute('type', 'range');
-        slider.setAttribute('id', 'slider' + i);
-        slider.setAttribute('min', '1');
-        slider.setAttribute('max', '100');
-        slider.setAttribute('value', '50'); // Default value
-        slidersContainer.appendChild(slider);
-
-        // Add event listener to update slider value dynamically on mousemove
-        slider.addEventListener('mousemove', function(event) {
-            var sliderValue = event.target.value;
-            event.target.setAttribute('value', sliderValue);
-
-            // Here, you can perform any additional actions you want when hovering over the slider
-            // For example, you can update the game based on the slider value
-            console.log('Slider ' + event.target.id + ' value changed to: ' + sliderValue);
-        });
-
-        // Add event listener to update slider value dynamically on input
-        slider.addEventListener('input', function(event) {
-            var sliderValue = event.target.value;
-            event.target.setAttribute('value', sliderValue);
-
-            // Here, you can perform any additional actions you want when slider value changes
-            // For example, you can update the game based on the slider value
-            console.log('Slider ' + event.target.id + ' value changed to: ' + sliderValue);
-        });
+// Function to update the displayed value of the slider
+function updateSliderValue(slider) {
+    const valueDisplay = slider.parentElement.querySelector('.value-display'); // Get the element to display the value
+    if (valueDisplay) {
+        const value = slider.value; // Get the current value of the slider
+        valueDisplay.innerText = value; // Update the displayed value
     }
-});
+}
+
+// Function to show the value of the slider on hover
+function showSliderValue(slider) {
+    const valueDisplay = slider.parentElement.querySelector('.value-display'); // Get the element to display the value
+    if (valueDisplay) {
+        const value = slider.value; // Get the current value of the slider
+        valueDisplay.innerText = value; // Update the displayed value
+        valueDisplay.style.display = 'block'; // Show the value
+    }
+}
+
+// Function to hide the value of the slider when not hovering
+function hideSliderValue(slider) {
+    const valueDisplay = slider.parentElement.querySelector('.value-display'); // Get the element to display the value
+    if (valueDisplay) {
+        valueDisplay.style.display = 'none'; // Hide the value
+    }
+}
+
+
+
+
+
 
 // Add event listeners to buttons
-document.getElementById('startButton').addEventListener('click', startGame);
-document.getElementById('stopButton').addEventListener('click', stopGame);
-document.getElementById('aiButton').addEventListener('click', enableAI);
+//document.getElementById('startButton').addEventListener('click', startGame);
+//document.getElementById('stopButton').addEventListener('click', stopGame);
+//document.getElementById('aiButton').addEventListener('click', enableAI);

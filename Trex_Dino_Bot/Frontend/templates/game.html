@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dino Game</title>
     <style>
-        body {
+        body{
             background-image: url("/static/assets/images/game_bg.png");
             background-size: cover;
             display: flex;
@@ -66,9 +66,46 @@
             font-size: 12px; /* Font size */
             display: none; /* Initially hidden */
         }
-        .slider-container input[type="range"]:hover::after {
-            display: block; /* Show on hover */
+
+       .slider-container input[type="range"]:hover::after {
+           /* display: block;  Show on hover */
         }
+
+        .value-display {
+            display: none; /* Initially hide the value */
+            position: absolute; /* Position the value display relative to its parent (.slider-wrapper) */
+            top: 0; /* Adjust top position as needed */
+            left: 100%; /* Position the value display to the right of the slider */
+            transform: translateX(5px); /* Adjust horizontal offset */
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+            padding: 5px; /* Padding around the value */
+            border-radius: 5px; /* Rounded corners */
+            font-size: 12px; /* Font size */
+}
+
+        /* Adjust position for slider 1 */
+        .value-display-1 {
+            top: -5px; /* Adjust top position for slider 1 */
+        }
+        
+        /* Adjust position for slider 2 */
+        .value-display-2 {
+            top: 65px; /* Adjust top position for slider 2 */
+        }
+        /* Adjust position for slider 3 */
+        .value-display-3 {
+            top: 130px; /* Adjust top position for slider 3 */
+        }
+        /* Adjust position for slider 4 */
+        .value-display-4 {
+            top: 195px; /* Adjust top position for slider 4 */
+        }
+        /* Adjust position for slider 5 */
+        .value-display-5 {
+            top: 260px; /* Adjust top position for slider 5 */
+        }
+
+
         .button-container {
             text-align: center;
             margin-right: 20px; /* Add some margin between button container and slider container */
@@ -143,14 +180,32 @@
             <img src="/static/assets/images/icons.jpg" alt="Icon 4" class="icon">
             <img src="/static/assets/images/icons.jpg" alt="Icon 5" class="icon">
         </div>
-        
-        <div class="slider-container">
-            <input type="range" id="slider1" min="1" max="100" value="50">
-            <input type="range" id="slider2" min="1" max="100" value="50">
-            <input type="range" id="slider3" min="1" max="100" value="50">
-            <input type="range" id="slider4" min="1" max="100" value="50">
-            <input type="range" id="slider5" min="1" max="100" value="50">
-        </div>
+                
+         <div class="slider-container">
+    <div class="slider-wrapper">
+        <input type="range" id="slider1" min="1" max="100" value="">
+        <span class="value-display value-display-1"></span> <!-- Display value for slider 1 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider2" min="1" max="100" value="">
+        <span class="value-display value-display-2"></span> <!-- Display value for slider 2 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider3" min="1" max="100" value="">
+      <span class="value-display value-display-3"></span> <!-- Display value for slider 3 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider4" min="1" max="100" value="">
+       <span class="value-display value-display-4"></span> <!-- Display value for slider 4 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider5" min="1" max="100" value="">
+       <span class="value-display value-display-5"></span> <!-- Display value for slider 5 -->
+    </div>
+</div>
+
+
+
          <div class="chatbot_text" id="chatbottext">
              KEEP IT UP GUYS...GOOD GOING!!!
              <div>
@@ -159,5 +214,5 @@
          </div>
     </div>
     <script src="{{ url_for('static', filename='game.js') }}"></script>
-</body>
+    </body>
 </html>

@@ -15,30 +15,63 @@ Classes:
 
 The game loop in the main function handles updates, rendering, and user input.
 """
+
 import os
-import json
 import sys
 import math
 import random
 import pygame
-import pyautogui
-
-# Import the Q-learning classes
-from q_learning import DinoStateSpace, QLearningAgent
+from PIL import  Image
+import pandas as pd
 
 
-WIDTH = 623
-HEIGHT = 150
+WIDTH = 600
+HEIGHT = 200
 
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen.fill((255,255,255))
 pygame.display.set_caption('Dino')
+
+
+assets={}
+# Read the CSV file using pandas
+df = pd.read_csv('assets\\images\\resources.csv')
+
+# Iterate over each row in the DataFrame
+for index, row in df.iterrows():
+    # Extract information from the row
+    resourceName = row['resourceName']
+    x1, y1, x2, y2 = int(row['X1']), int(row['Y1']), int(row['X2']), int(row['Y2'])
+    
+    # Open the image file
+    image = Image.open('assets\\images\\resources.png')
+    
+    # Crop the image based on the provided coordinates
+    cropped_image = image.crop((x1, y1, x2, y2))
+    
+    # Convert the cropped image to RGB mode to remove any alpha channel
+    cropped_image = cropped_image.convert("RGB")
+    
+    # Create a new white background image with the same dimensions as the cropped image
+    # background = Image.new('RGB', cropped_image.size, color='white')
+    
+    # Paste the cropped image onto the white background
+    # background.paste(cropped_image, (0, 0))
+    
+    background=cropped_image
+    
+    background=background.convert('RGBA')
+    
+    background=background.resize(list(map(lambda x:x//2 , background.size)))
+    
+    assets[resourceName]=background
 
 
 class Background:
     """
-    Class representing the scrolling background.
+    Class representing the background.
 
     Attributes:
     - width: Width of the background.
@@ -53,7 +86,7 @@ class Background:
         self.width = WIDTH
         self.height = HEIGHT
         self.x = x
-        self.y = 0
+        self.y = 150
         self.set_texture()
         self.show()
 
@@ -65,14 +98,24 @@ class Background:
 
     def show(self):
         """Display the background."""
-        screen.blit(self.texture, (self.x, self.y))
+        # screen.blit(self.texture, (self.x, self.y))
+        
+        # bg = (0, 150)
+        # bg1 = (600,150)
+        screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), (self.x,self.y))
+        # screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), bg1)
 
     def set_texture(self):
         """Load and scale the background texture."""
-        path = os.path.join('assets/images/bg.png')
-        self.texture = pygame.image.load(path)
-        self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
-
+        
+        # path = os.path.join('assets/images/bg.png')
+        path = os.path.join('assets/images/ground.png')
+        # self.texture = pygame.image.load(path)
+        
+        self.texture=assets['ground']#Image.open(path).convert("RGBA")
+        
+        # self.texture=self.texture.resize(list(map(lambda x:x//2 , self.texture.size)))
+        # self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
 
 class Dino:
     """
@@ -99,24 +142,32 @@ class Dino:
         """Initialize Dino object."""
         self.width = 44
         self.height = 44
-        self.x = 10
-        self.y = 80
+        self.x = 5#10
+        self.y = 110
         self.texture_num = 0
         self.dy = 3
-        self.gravity = 1.0
+        self.gravity = 1.2
         self.onground = True
+        self.collided=False
         self.jumping = False
         self.jump_stop = 10
         self.falling = False
+        self.ducking = False
         self.fall_stop = self.y
         self.set_texture()
+        #self.set_texture_duck()
         self.set_sound()
+        self.set_sound_duck()
         self.show()
 
     def update(self, loops):
         """Update Dino's position and state."""
+        # ducking
+        if self.collided:
+            self.texture_num = 1#(self.texture_num + 1) % 2
+            self.set_texture_collided()
         # jumping
-        if self.jumping:
+        elif self.jumping:
             self.y -= self.dy
             if self.y <= self.jump_stop:
                 self.fall()
@@ -128,30 +179,75 @@ class Dino:
                 self.stop()
 
         # walking
-        elif self.onground and loops % 4 == 0:
+        elif self.onground and loops % 4 == 0 and not self.ducking:
             self.texture_num = (self.texture_num + 1) % 3
             self.set_texture()
+        
+        # ducking
+        elif self.onground and loops % 4 == 0 and self.ducking:
+            self.texture_num = (self.texture_num + 1) % 2
+            self.set_texture_duck()
+                
 
     def show(self):
         """Display Dino."""
-        screen.blit(self.texture, (self.x, self.y))
-
+        # screen.blit(self.texture, (self.x, self.y))
+        
+        screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), (self.x, self.y))
+        
+        # if not self.ducking:
+        #     screen.blit(self.texture, (self.x, self.y))
+        # elif self.ducking:
+        #     screen.blit(self.texture, (self.x, self.y+8))
+        
     def set_texture(self):
         """Load and scale Dino's texture."""
         path = os.path.join(f'assets/images/dino{self.texture_num}.png')
-        self.texture = pygame.image.load(path)
-        self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
+        
+        self.texture = assets[f'dino{self.texture_num}']#pygame.image.load(path)
+        
+        # self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
+
+    def set_texture_duck(self):
+        """Load and scale Dino's texture."""
+        path = os.path.join(f'assets/images/dino_duck{self.texture_num}.png')
+        
+        self.texture = assets[f'dino_duck{self.texture_num}']#pygame.image.load(path)
+        
+        # self.texture = pygame.transform.scale(self.texture, (self.width, self.height-12))
+
+    def set_texture_collided(self):
+        """Load and scale Dino's texture."""
+        path = os.path.join(f'assets/images/dino_stuck{self.texture_num}.png')
+        
+        self.texture = assets[f'dino_stuck{self.texture_num}']#pygame.image.load(path)
+        
+        # self.texture = pygame.transform.scale(self.texture, (self.width, self.height-12))
 
     def set_sound(self):
         """Load Dino's jump sound."""
         path = os.path.join('assets/sounds/jump.wav')
         self.sound = pygame.mixer.Sound(path)
 
+    def set_sound_duck(self):
+        """Load Dino's duck sound."""
+        path = os.path.join('assets/sounds/duck.wav')
+        self.soundduck = pygame.mixer.Sound(path)
+
     def jump(self):
         """Handle jumping action."""
         self.sound.play()
         self.jumping = True
         self.onground = False
+
+    def duck(self):
+        """Handle jumping action."""
+        self.soundduck.play()
+        self.ducking = True
+
+    def duckrelease(self):
+        """Handle jumping action."""
+        self.ducking = False
 
     def fall(self):
         """Handle falling action."""
@@ -162,7 +258,97 @@ class Dino:
         """Stop falling and set back to onground."""
         self.falling = False
         self.onground = True
+    
+    def collide(self):
+        self.collided=True
 
+
+class Bird:
+    """
+    Class representing the bird obstacle.
+
+    Attributes:
+    - width: Width of the Bird.
+    - height: Height of the Bird.
+    - x: X-coordinate of the Bird.
+    - y: Y-coordinate of the Bird.
+    - texture: Loaded and scaled image representing the Bird.
+    """
+
+    def __init__(self, x):
+        """Initialize Birt object."""
+        self.type="Bird"
+        self.width = 40
+        self.height = 30
+        self.texture_num = 0 
+        self.flying=True
+        self.x = x
+        self.y = random.randint(20,80)
+        self.set_texture()
+        self.show()
+
+    def update(self, dx):
+        """Update Bird's position."""
+        self.x += dx
+        #self.y += random.randint(-3, 3)
+
+    def show(self):
+        """Display Bird."""
+        
+        # screen.blit(self.texture, (self.x, self.y))
+        
+        screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), (self.x, self.y))
+    def set_texture(self):
+        """Load and scale Dino's texture."""
+        # path = os.path.join(f'assets/images/bird{self.texture_num}.png')
+        
+        self.texture = assets[f'bird{self.texture_num}']#pygame.image.load(path)
+        
+        # self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
+        
+    def update_fly(self,loops):
+        """Update Dino's position and state."""
+        # ducking
+        if self.flying and loops % 10 == 0:
+            self.texture_num = (self.texture_num + 1) % 2
+            self.set_texture()
+        
+class Cloud:
+    """
+    Class representing the Cactus obstacle.
+
+    Attributes:
+    - width: Width of the Cactus.
+    - height: Height of the Cactus.
+    - x: X-coordinate of the Cactus.
+    - y: Y-coordinate of the Cactus.
+    - texture: Loaded and scaled image representing the Cactus.
+    """
+
+    def __init__(self,x):
+        """Initialize Cactus object."""
+        self.type="Cactus"
+        self.width = 34
+        self.height = 44
+        self.x = x
+        self.y = random.randint(10, 100)
+        self.set_texture()
+        self.show()
+
+    def update(self, dx):
+        """Update Cactus's position."""
+        self.x += dx
+
+    def show(self):
+        """Display Cactus."""
+        # screen.blit(self.texture, (self.x, self.y))
+        screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), (self.x, self.y))
+
+    def set_texture(self):
+        """Load and scale Cactus's texture."""
+        # path = os.path.join('assets/images/cactus.png')
+        self.texture = assets['cloud']#pygame.image.load(path)
+        # self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
 
 class Cactus:
     """
@@ -178,10 +364,11 @@ class Cactus:
 
     def __init__(self, x):
         """Initialize Cactus object."""
+        self.type="Cactus"
         self.width = 34
         self.height = 44
         self.x = x
-        self.y = 80
+        self.y = 110
         self.set_texture()
         self.show()
 
@@ -191,13 +378,14 @@ class Cactus:
 
     def show(self):
         """Display Cactus."""
-        screen.blit(self.texture, (self.x, self.y))
+        # screen.blit(self.texture, (self.x, self.y))
+        screen.blit(pygame.image.fromstring(self.texture.tobytes(), self.texture.size, 'RGBA'), (self.x, self.y))
 
     def set_texture(self):
         """Load and scale Cactus's texture."""
-        path = os.path.join('assets/images/cactus.png')
-        self.texture = pygame.image.load(path)
-        self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
+        # path = os.path.join('assets/images/cactus.png')
+        self.texture = assets[f'obstacle{random.randint(1, 6)}']#pygame.image.load(path)
+        # self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
 
 
 class Collision:
@@ -211,7 +399,20 @@ class Collision:
     def between(self, obj1, obj2):
         """Check if two objects collide."""
         distance = math.sqrt((obj1.x - obj2.x) ** 2 + (obj1.y - obj2.y) ** 2)
-        return distance < 35
+        if not obj1.ducking and obj2.type=="Cactus":
+            return distance < 38
+        elif obj1.ducking and obj2.type=="Cactus":
+            return distance<45
+        elif not obj1.ducking and obj2.type=="Bird"  and obj2.texture_num==0:
+            return distance < 35
+        elif obj1.ducking and obj2.type=="Bird" and obj2.texture_num==0:
+            return distance<35
+        elif not obj1.ducking and obj2.type=="Bird"  and obj2.texture_num==1:
+            return distance < 30
+        elif obj1.ducking and obj2.type=="Bird" and obj2.texture_num==1:
+            return distance<32
+        else:
+            return distance<35
 
 
 class Score:
@@ -279,7 +480,6 @@ class Game:
     - sound: Loaded sound for game over.
     - big_lbl: Rendered label for the game over screen.
     - small_lbl: Rendered label for restarting the game.
-    - restart_count: Number of restarts
     """
 
     def __init__(self, hs=0):
@@ -287,21 +487,21 @@ class Game:
         self.bg = [Background(x=0), Background(x=WIDTH)]
         self.dino = Dino()
         self.obstacles = []
+        self.clouds = []
         self.collision = Collision()
         self.score = Score(hs)
-        self.speed = 3
+        self.speed = 4
         self.playing = False
         self.set_sound()
         self.set_labels()
-        self.spawn_cactus()
-        self.restart_count = 0  # Track the number of restarts
+        #self.spawn_cactus()
 
     def set_labels(self):
         """Load fonts and labels for game over screen."""
         big_font = pygame.font.SysFont('monospace', 24, bold=True)
         small_font = pygame.font.SysFont('monospace', 18)
-        self.big_lbl = big_font.render(f'G A M E  O V E R', 1, (0, 0, 0))
-        self.small_lbl = small_font.render(f'press r to restart', 1, (0, 0, 0))
+        self.big_lbl = big_font.render('G A M E  O V E R', 1, (0, 0, 0))
+        self.small_lbl = small_font.render('press r to restart', 1, (0, 0, 0))
 
     def set_sound(self):
         """Load game over sound."""
@@ -318,172 +518,192 @@ class Game:
         screen.blit(self.big_lbl, (WIDTH // 2 - self.big_lbl.get_width() // 2, HEIGHT // 4))
         screen.blit(self.small_lbl, (WIDTH // 2 - self.small_lbl.get_width() // 2, HEIGHT // 2))
         self.playing = False
-        self.restart_count += 1  # Increment restart count
+         
 
     def tospawn(self, loops):
         """Determine if an obstacle should spawn."""
         return loops % 100 == 0
+    
+    def tospawnclouds(self, loops):
+        """Determine if an obstacle should spawn."""
+        return loops % 50 == 0
 
+    def spawn_cloud(self):
+        """Spawn a new cloud obstacle."""
+        if len(self.clouds) > 0:
+            prev_cloud = self.clouds[-1]
+            x = random.randint(prev_cloud.x + self.dino.width + WIDTH, WIDTH + prev_cloud.x + self.dino.width + 200)
+        else:
+            x = random.randint(WIDTH + 100, 1000)
+        cloud = Cloud(x)
+        self.clouds.append(cloud)
+        
     def spawn_cactus(self):
         """Spawn a new cactus obstacle."""
+        # list with cactus
         if len(self.obstacles) > 0:
             prev_cactus = self.obstacles[-1]
             x = random.randint(prev_cactus.x + self.dino.width + 84,
                                WIDTH + prev_cactus.x + self.dino.width + 84)
+
+        # empty list
         else:
             x = random.randint(WIDTH + 100, 1000)
 
+        # create the new cactus
         cactus = Cactus(x)
         self.obstacles.append(cactus)
+    
+    def spawn_Bird(self):
+        """Spawn a new bird obstacle."""
+        # list with bird
+        if len(self.obstacles) > 0:
+            prev_obstacle = self.obstacles[-1]
+            x = random.randint(prev_obstacle.x + self.dino.width + 84,
+                               WIDTH + prev_obstacle.x + self.dino.width + 84)
+
+        # empty list
+        else:
+            x = random.randint(WIDTH + 100, 1000)
+
+        # create the new cactus
+        bird = Bird(x)
+        self.obstacles.append(bird)
+    
+    def spawn_obstacle(self):
+        """Spawn a new obstacle (cactus or bird)."""
+        if len(self.obstacles) > 0:
+            prev_obstacle = self.obstacles[-1]
+            x = random.randint(prev_obstacle.x + self.dino.width + 120,WIDTH + prev_obstacle.x + self.dino.width + 120)
+            print(prev_obstacle.x,x)
+        else:
+            x = random.randint(WIDTH + 100, 1000)
+        
+        if random.random() < 0.8:  # 50% chance of spawning a cactus
+            obstacle = Cactus(x)
+        else:
+            obstacle = Bird(x)
+        
+        self.obstacles.append(obstacle)
+   
 
     def restart(self):
         """Restart the game."""
-        self.dino = Dino()  # Reset Dino
-        self.obstacles = []  # Clear obstacles
-        self.playing = True
-        self.spawn_cactus()  # Spawn initial cactus
+        self.__init__(hs=self.score.hs)
 
-        # Load Q-values only for the first restart
-        dino_state_space = DinoStateSpace(self.dino, self.obstacles)
-        actions = ['jump', 'no_jump']
-        q_learning_agent = QLearningAgent(dino_state_space, actions)
 
-        # Load Q-values if available
-        if os.path.exists('q_values.json'):
-            q_learning_agent.load_q_values('q_values.json')
-            print("Q-values loaded from 'q_values.json")
-
-def main(num_restarts):
+def main():
     """Main game loop."""
-    completed_games = 0
 
-    while completed_games < num_restarts:
-        print(f"\nGame #{completed_games + 1}")
+    # objects
+    game = Game()
+    dino = game.dino
+    
+    # variables
+    clock = pygame.time.Clock()
+    loops = 0
+    over = False
 
-        game = Game()  # Initialize the game for each iteration
-        dino = game.dino
+    # main loop
+    while True:
 
-        # Q-learning
-        dino_state_space = DinoStateSpace(dino, game.obstacles)
-        actions = ['jump', 'no_jump']
-        q_learning_agent = QLearningAgent(dino_state_space, actions)
+        if game.playing:
 
-        # Load Q-values if available
-        if os.path.exists('q_values.json'):
-            q_learning_agent.load_q_values('q_values.json')
-            print("Q-values loaded from 'q_values.json'")
-
-        # variables
-        clock = pygame.time.Clock()
-        loops = 0
-        over = False
-        game.start()  # Start the game automatically
-
-        while True:
             loops += 1
+            
+            screen.fill((255,255,255))
 
-            # Background
+            # --- BG ---
             for bg in game.bg:
                 bg.update(-game.speed)
                 bg.show()
-
-            # Dino
+            
+            # --- dino ---
             dino.update(loops)
             dino.show()
 
-            # Cactus
+            # --- cactus ---
+            if game.tospawnclouds(loops):
+                game.spawn_cloud()
+            
+            for cloud in game.clouds:
+                cloud.update(-game.speed)
+                cloud.show()
+
+            # --- cactus ---
             if game.tospawn(loops):
-                game.spawn_cactus()
+                # game.spawn_cactus()
+                # game.spawn_Bird()
+                game.spawn_obstacle()
 
             for cactus in game.obstacles:
                 cactus.update(-game.speed)
+                if cactus.type=="Bird":
+                    cactus.update_fly(loops)
                 cactus.show()
 
-                # Update Dino's state after obstacles have been updated
-                dino_state_space.update_state()
-
-                # Get the current state from the DinoStateSpace
-                current_state = dino_state_space.get_state()
-
-                # Choose an action using Q-learning agent
-                action = q_learning_agent.get_action(current_state)
-
-                # Take action based on Q-learning decision
-                if action == 'jump' and (dino.onground and not dino.falling):
-                    dino.jump()
-
-                if action == 'no_jump' and not dino.onground and dino.falling:
-                    dino.fall()
-
-                # Check for collision
+                # collision
                 if game.collision.between(dino, cactus):
-                    reward = -10
                     over = True
-                else:
-                    if dino.jumping:
-                        reward = 1
-                    else:
-                        reward = 2
-                        if dino.onground and dino.x > cactus.x:
-                            reward += 10
 
-                # Update Q-value
-                next_state = dino_state_space.get_state()
-                q_learning_agent.update_q_value(current_state, action, reward, next_state)
 
-            # Automatically restart the game after a certain number of loops or when over
-            if over or game.score.act > 999:
-                print("Q-values after Game #{}:".format(completed_games + 1))
-                q_learning_agent.print_q_values()
+            if over:
+                game.over()
 
-                # Increment completed games
-                completed_games += 1
+            # -- score ---
+            game.score.update(loops)
+            game.score.show()
+            
+            
+            pygame.display.update()
 
-                # Automatically restart the game after printing Q-values
-                game.restart()
-                dino = game.dino
-                loops = 0
-                over = False
-            else:
-                # Score
-                game.score.update(loops)
-                game.score.show()
+        # events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
-                # Events
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        # Save Q-values before quitting
-                        q_learning_agent.save_q_values('q_values.json')
-                        pygame.quit()
-                        sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                    if not over:
+                        if dino.onground:
+                            dino.jump()
+                        if not game.playing:
+                            game.start()
 
-                # Decay exploration rate for Q-learning agent
-                q_learning_agent.decay_exploration_rate()
+                elif event.key == pygame.K_DOWN:
+                    if not over:
+                        if dino.onground:
+                            dino.duck()
+                
+                        if not game.playing:
+                            game.start()
 
-                clock.tick(80)
+                if event.key == pygame.K_r:
+                    game.restart()
+                    dino = game.dino
+                    loops = 0
+                    over = False
+                    screen.fill((255,255,255))
+                    
 
-                # Update the display
-                pygame.display.flip()
+                    # --- BG ---
+                    for bg in game.bg:
+                        bg.update(-game.speed)
+                        bg.show()
+                    dino.show()
+                    game.score.show()
 
-                # Check if the game is not playing and break out of the loop
-                if not game.playing:
-                    break
 
-        # Prompt user to press 'r' to restart or any other key to exit
-        if completed_games < num_restarts:
-            print("\nPress 'r' to restart or any other key to exit.")
-            restart_key_pressed = False
-            while not restart_key_pressed:
-                for event in pygame.event.get():
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_r:
-                            restart_key_pressed = True
-                        else:
-                            pygame.quit()
-                            sys.exit()
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_DOWN:
+                    if not over:
+                        if dino.onground:
+                            dino.duckrelease()
+                
 
-    print("\nCompleted specified number of restarts. Exiting.")
-    
-# Get the number of restarts from the user
-num_restarts = int(input("Enter the number of restarts to be played: "))
-main(num_restarts)
+        pygame.display.update()
+        clock.tick(100)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Game</title>
+    <style>
+        body{
+            background-image: url("/static/assets/images/game_bg.png");
+            background-size: cover;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            padding: 20px; 
+        }
+        
+        .game-window {
+            width: 800px; /* Width of the game window */
+            height: 250px; /* Height of the game window */
+            background-color: white; /* Background color of the game window */
+            border: 2px solid black; /* Border of the game window */
+            margin-bottom: 20px; /* Margin bottom to create space between game window and buttons */
+        }
+        .container {
+            display: flex;
+            align-items: flex-start; /* Align items to the top */
+            width: 50%;
+            margin: 20px;
+            justify-content: flex-end; /* Align to the right */
+            margin-top: -120px; 
+            position: relative; /* Add position relative to container */
+        }
+        .icon-container {
+            display: flex;
+            flex-direction: column; /* Display icons from top to bottom */
+            align-items: center; /* Center items horizontally */
+            margin-right: 20px; /* Add some margin between icons and sliders */
+        }
+        .icon {
+            width: 50px; /* Default icon size */
+            height: auto;
+            margin-bottom: 10px; /* Add some space between icons */
+        }
+        .slider-container {
+            display: flex;
+            flex-direction: column; /* Stack sliders vertically */
+            align-items: flex-start; /* Align sliders to the top */
+        }
+        .slider-container input[type="range"] {
+            width: 100%;
+            margin-bottom: 48px;
+            margin-right: 100px;
+            position: relative;
+        }
+        .slider-container input[type="range"]::after {
+            content: attr(value);
+            position: absolute;
+            top: -20px; /* Position above the slider */
+            left: 50%; /* Position at the middle */
+            transform: translateX(-50%); /* Center horizontally */
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+            padding: 5px; /* Padding around the value */
+            border-radius: 5px; /* Rounded corners */
+            font-size: 12px; /* Font size */
+            display: none; /* Initially hidden */
+        }
+
+       .slider-container input[type="range"]:hover::after {
+           /* display: block;  Show on hover */
+        }
+
+        .value-display {
+            display: none; /* Initially hide the value */
+            position: absolute; /* Position the value display relative to its parent (.slider-wrapper) */
+            top: 0; /* Adjust top position as needed */
+            left: 100%; /* Position the value display to the right of the slider */
+            transform: translateX(5px); /* Adjust horizontal offset */
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+            padding: 5px; /* Padding around the value */
+            border-radius: 5px; /* Rounded corners */
+            font-size: 12px; /* Font size */
+}
+
+        /* Adjust position for slider 1 */
+        .value-display-1 {
+            top: -5px; /* Adjust top position for slider 1 */
+        }
+        
+        /* Adjust position for slider 2 */
+        .value-display-2 {
+            top: 65px; /* Adjust top position for slider 2 */
+        }
+        /* Adjust position for slider 3 */
+        .value-display-3 {
+            top: 130px; /* Adjust top position for slider 3 */
+        }
+        /* Adjust position for slider 4 */
+        .value-display-4 {
+            top: 195px; /* Adjust top position for slider 4 */
+        }
+        /* Adjust position for slider 5 */
+        .value-display-5 {
+            top: 260px; /* Adjust top position for slider 5 */
+        }
+
+
+        .button-container {
+            text-align: center;
+            margin-right: 15px; /* Add some margin between button container and slider container */
+             width: 100%;
+             margin-bottom: 90px;
+            
+             position: relative;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        .ai-button-container {
+            text-align: center;
+        }
+        .ai-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        .chatbot_icon{
+        
+        width: 80px; 
+        height: auto;
+        margin-right: -225px;
+        margin-bottom: -10px; 
+        }
+        .chatbot_text {
+            position: absolute; /* Position cloud text box relative to container */
+            top: 350px; /* Adjust vertical position */
+            left: 50%; /* Position horizontally at the center */
+            transform: translateX(-50%); /* Center horizontally */
+            width: 150px; /* Set width of cloud text box */
+            height: 80px; /* Set height of cloud text box */
+            background-color: white; /* Background color of cloud text box */
+            border-radius: 10px; /* Border radius to create rounded corners */
+            border: 2px solid black; /* Border of cloud text box */
+            padding: 10px; /* Padding inside cloud text box */
+            text-align: center; /* Center text horizontally */
+        }
+        .chatbot_icon:hover + .chatbot_text {
+            display: block; /* Show chatbot text when hovering over chatbot icon */
+        }
+    </style>
+</head>
+<body>
+        <div class="button-container">
+        <div class="game-window" id="gamewindow">
+            <canvas id="gameCanvas" width="800" height="350"></canvas>
+        </div>
+        <button id="startButton" class="button">Start</button>
+        <button id="stopButton" class="button">Stop</button>
+        <select id="AIModeDropdown" class="ai-mode-dropdown">
+            <option value="CNN">CNN</option>
+            <option value="VoiceOver">Voice Over</option>
+            <option value="Algorithm">Algorithm</option>
+        </select>
+        </div>
+
+    <div class="container">
+        <div class="icon-container">
+            <img src="/static/assets/images/icons.jpg" alt="Icon 1" class="icon">
+            <img src="/static/assets/images/icons.jpg" alt="Icon 2" class="icon">
+            <img src="/static/assets/images/icons.jpg" alt="Icon 3" class="icon">
+            <img src="/static/assets/images/icons.jpg" alt="Icon 4" class="icon">
+            <img src="/static/assets/images/icons.jpg" alt="Icon 5" class="icon">
+        </div>
+                
+         <div class="slider-container">
+    <div class="slider-wrapper">
+        <input type="range" id="slider1" min="1" max="100" value="">
+        <span class="value-display value-display-1"></span> <!-- Display value for slider 1 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider2" min="1" max="100" value="">
+        <span class="value-display value-display-2"></span> <!-- Display value for slider 2 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider3" min="1" max="100" value="">
+      <span class="value-display value-display-3"></span> <!-- Display value for slider 3 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider4" min="1" max="100" value="">
+       <span class="value-display value-display-4"></span> <!-- Display value for slider 4 -->
+    </div>
+    <div class="slider-wrapper">
+        <input type="range" id="slider5" min="1" max="100" value="">
+       <span class="value-display value-display-5"></span> <!-- Display value for slider 5 -->
+    </div>
+</div>
+
+
+
+         <div class="chatbot_text" id="chatbottext">
+             KEEP IT UP GUYS...GOOD GOING!!!
+             <div>
+                 <img src="/static/assets/images/icons.jpg" alt="Icon 5" class="chatbot_icon">
+             </div>
+         </div>
+    </div>
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
+    </body>
+</html>

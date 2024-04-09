@@ -1,13 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr  8 19:08:06 2024
+import pyautogui
+from Game.dino import DinoGame  # Importing the DinoGame class from dino.py
 
-@author: Amitr
-"""
-from Game.dino import DinoGame
+WIDTH = 600
+HEIGHT = 200
 
-WIDTH= 600
-HEIGHT= 200
 def main():
-    dg=DinoGame(WIDTH, HEIGHT)
-    dg.main()
+    dino_game = DinoGame(WIDTH, HEIGHT)
+    dino_game.run()
+    x=dino_game.loops
+    print(x)
+    if dino_game.game.playing:
+        dino_game.display_dino()
+        dino_game.display_obstacles()
+        dino_game.display_score()
+        # Add more display methods as needed
+
+if __name__ == "__main__":
+    main()

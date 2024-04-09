@@ -23,6 +23,8 @@ import random
 import pygame
 from PIL import  Image
 import pandas as pd
+import pyautogui
+import time
 
 
 WIDTH = 600
@@ -299,7 +301,7 @@ class Bird:
         self.texture_num = 0 
         self.flying=True
         self.x = x
-        self.y = random.randint(20,80)
+        self.y = random.randint(20,120)
         self.set_texture()
         self.show(fn)
 
@@ -349,7 +351,7 @@ class Cloud:
         self.width = 34
         self.height = 44
         self.x = x
-        self.y = random.randint(10, 100)
+        self.y = random.randint(40, 100)
         self.set_texture()
         self.show(fn)
 
@@ -631,7 +633,7 @@ class Game:
             x=self.obstacles[-1].x+max_spawn_distance+random.randint(min_spawn_distance, max_spawn_distance)
             x+=offest
             if x<0 or WIDTH-(self.obstacles[-1].x//WIDTH)<max_spawn_distance or (x-self.obstacles[-1].x)<min_spawn_distance:
-                print('here')
+                # print('here')
                 x=max_spawn_distance*2
             
             # print(x)
@@ -641,7 +643,7 @@ class Game:
         else:
             x = random.randint(WIDTH + 100, 1000)
         
-        if random.random() < 0.8:  # 50% chance of spawning a cactus
+        if random.random() < 0.0:  # 90% chance of spawning a cactus
             obstacle = Cactus(x,fn)
         else:
             obstacle = Bird(x,fn)
@@ -652,6 +654,35 @@ class Game:
     def restart(self,fn,fn1,fn2):
         """Restart the game."""
         self.__init__(fn,fn1,fn2,hs=self.score.hs)
+
+
+class AlgoPlayer:
+    def __init__(self, dino, obstacle=None):
+        self.dino = dino
+        self.obstacle = obstacle
+        self.check=True
+        self.num_obstacles=0
+
+    def update(self, dino, obstacle):
+        self.dino = dino
+        self.obstacle = obstacle
+        dino_x = self.dino.x
+        dino_y = self.dino.y
+
+        if self.obstacle.x> 0 and self.obstacle.x<600:
+            print(f'X: {obstacle.x - dino_x}, Y: {obstacle.y - dino_y}')
+            if self.check and abs(self.obstacle.y - dino_y) <= 22 and abs(dino_x - self.obstacle.x) < 100:
+                if self.dino.onground:
+                    pyautogui.press('up')
+                    self.check=False
+            
+            elif abs(dino_y - self.obstacle.y) > 22 and abs(self.obstacle.x - dino_x) < 50 :
+                
+                if self.check and not self.dino.ducking:
+                    pyautogui.keyDown('down')
+                    self.check=False
+                elif self.check and self.dino.ducking:
+                    pyautogui.keyUp('down')
 
 
 class DinoGame:
@@ -674,6 +705,9 @@ class DinoGame:
         self.clock = pygame.time.Clock()
         self.loops = 0
         self.over = False
+        
+        self.algo_player = AlgoPlayer(self.dino)
+        
     
     def screenblitz(self,asset):
         self.screen.blit(pygame.image.fromstring(asset.texture.tobytes(), asset.texture.size, 'RGBA'), (asset.x, asset.y))
@@ -684,18 +718,19 @@ class DinoGame:
     def setfont(self,a='monospace',b=18,c=False):
         return pygame.font.SysFont(a, b,bold=c)
     
-    def main(self):
+    def run(self):
         """Main game loop."""
         while True:
+            
             if self.game.playing:
                 self.loops += 1
                 self.screen.fill((255, 255, 255))
-
                 # --- BG ---
                 for bg in self.game.bg:
                     bg.update(-self.game.speed)
                     # print(bg.x)
                     bg.show(self.screenblitz)
+                
                 
                 # --- dino ---
                 self.dino.update(self.loops)
@@ -708,9 +743,26 @@ class DinoGame:
                 for cloud in self.game.clouds:
                     cloud.update(-self.game.speed)
                     cloud.show(self.screenblitz)
+                    
+                if len(self.game.obstacles)>1:
+                    
+                    self.game.obstacles=[i for i in self.game.obstacles if i.x>0]
+                    # Sort obstacles based on x-coordinate
+                    self.game.obstacles.sort(key=lambda obstacle: obstacle.x)
+                    # print(len(self.game.obstacles),self.game.obstacles[0].x,sep="::")
 
+                    self.algo_player.update(self.dino, self.game.obstacles[0])
+                    if self.loops%10==0:
+                        if self.dino.ducking and not self.algo_player.check:
+                            pyautogui.keyUp('down')
+                        self.algo_player.check=True
+                        
+                        
+                    
                 # --- obstacles ---
                 if self.game.tospawn(self.loops):
+                    
+
                     self.game.spawn_obstacle(self.screenblitz)
 
                 for obstacle in self.game.obstacles:
@@ -775,8 +827,9 @@ class DinoGame:
 
             pygame.display.update()
             self.clock.tick(100)
+            
 
 if __name__ == "__main__":
     # main()
     dino_game = DinoGame(WIDTH,HEIGHT)
-    dino_game.main()
+    dino_game.run()

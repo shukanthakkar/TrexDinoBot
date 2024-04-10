@@ -643,7 +643,7 @@ class Game:
         else:
             x = random.randint(WIDTH + 100, 1000)
         
-        if random.random() < 0.0:  # 90% chance of spawning a cactus
+        if random.random() < 0.75:  # 75% chance of spawning a cactus
             obstacle = Cactus(x,fn)
         else:
             obstacle = Bird(x,fn)

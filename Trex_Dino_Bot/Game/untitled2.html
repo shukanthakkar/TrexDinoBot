@@ -1,0 +1,97 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr  9 17:35:00 2024
+
+@author: Amitr
+"""
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assets Display</title>
+    <style>
+        .asset {
+            display: inline-block;
+            margin: 10px;
+            border: 1px solid black;
+            padding: 10px;
+            position: relative;
+        }
+
+        #frameInfo {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        #ground {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <h2>Assets Display</h2>
+    <div id="assetsContainer"></div>
+    <div id="frameInfo"></div>
+    <div id="ground" style="background-image: url('assets/images/resources.png'); background-position: 0 102px; width: 600px; height: 200px;"></div>
+    <script>
+        // Function to fetch and parse CSV file
+        async function fetchCSV(url) {
+            const response = await fetch(url);
+            const data = await response.text();
+            return data;
+        }
+
+        // Function to load and display assets
+        async function loadAndDisplayAssets() {
+            const assetsContainer = document.getElementById('assetsContainer');
+            const frameInfoDiv = document.getElementById('frameInfo');
+
+            // Fetch CSV data
+            const csvData = await fetchCSV('assets/images/resources.csv');
+
+            // Parse CSV data
+            const rows = csvData.trim().split('\n');
+            rows.shift(); // Remove header row
+
+            // Load and display assets
+            rows.forEach(rowText => {
+                const [assetName, , X1, Y1, X2, Y2] = rowText.split(',');
+                const asset = document.createElement('div');
+                asset.className = 'asset';
+                asset.innerHTML = `
+                    <p>${assetName}</p>
+                    <div style="width: ${X2 - X1}px; height: ${Y2 - Y1}px; overflow: hidden;">
+                        <img id="${assetName}" src="assets/images/resources.png" alt="${assetName}" style="margin-left: -${X1}px; margin-top: -${Y1}px;">
+                    </div>
+                `;
+                assetsContainer.appendChild(asset);
+            });
+
+            // Rotate ground image
+            const ground = document.getElementById('ground');
+            if (ground) {
+                let position = 0;
+                let frameCount = 0;
+                const frameInfoInterval = setInterval(() => {
+                    position -= 1; // Incremental value to move the ground left
+                    ground.style.left = `${position}px`;
+                    if (position <= -2400) {
+                        position = 0;
+                    }
+                    frameCount++;
+                    frameInfoDiv.textContent = `Frame Number: ${frameCount}, Frame Rate: ${Math.round(1000 / 16)} fps`; // 16ms is approximately 60fps
+                }, 16); // Frame rate approximately 60fps
+            }
+        }
+
+        // Call the function to load and display assets
+        loadAndDisplayAssets();
+    </script>
+</body>
+</html>

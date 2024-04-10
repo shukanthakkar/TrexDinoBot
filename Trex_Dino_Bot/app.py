@@ -6,7 +6,7 @@ from Game.dino import DinoGame
 app = Flask(__name__, template_folder='Frontend/templates', static_folder='Frontend/static')
 
 # Instantiate the DinoGame class
-dino_game = DinoGame(WIDTH=800, HEIGHT=350)  # Adjust WIDTH and HEIGHT as needed
+# dino_game = DinoGame(WIDTH=800, HEIGHT=350)  # Adjust WIDTH and HEIGHT as needed
 
 @app.route('/')
 def home():

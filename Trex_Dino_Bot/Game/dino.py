@@ -159,7 +159,7 @@ class Dino:
         self.height = 44
         self.x = 5#10
         self.y = 110
-        self.texture_num = 0
+        self.texture_num = -1 #0
         self.dy = 3
         self.gravity = 1.2
         self.onground = True
@@ -217,9 +217,14 @@ class Dino:
         
     def set_texture(self):
         """Load and scale Dino's texture."""
-        path = os.path.join(f'assets/images/dino{self.texture_num}.png')
         
-        self.texture = assets[f'dino{self.texture_num}']#pygame.image.load(path)
+        if self.texture_num==-1:
+            path = os.path.join(f'assets/images/player_init.png')
+            self.texture = assets['player_init']#pygame.image.load(path)
+            self.texture_num+=1
+        else:        
+            path = os.path.join(f'assets/images/dino{self.texture_num}.png')
+            self.texture = assets[f'dino{self.texture_num}']#pygame.image.load(path)
         
         # self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
 
@@ -747,8 +752,10 @@ class DinoGame:
                 if len(self.game.obstacles)>1:
                     
                     self.game.obstacles=[i for i in self.game.obstacles if i.x>0]
-                    # Sort obstacles based on x-coordinate
-                    self.game.obstacles.sort(key=lambda obstacle: obstacle.x)
+                    
+                    # # Sort obstacles based on x-coordinate
+                    # self.game.obstacles.sort(key=lambda obstacle: obstacle.x)
+                    
                     # print(len(self.game.obstacles),self.game.obstacles[0].x,sep="::")
 
                     self.algo_player.update(self.dino, self.game.obstacles[0])
